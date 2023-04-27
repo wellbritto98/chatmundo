@@ -21,7 +21,9 @@ const firebaseConfig = {
 const database = getDatabase(app);
 
 
-function sendMessage(messageText, isSentByCurrentUser) {
+
+
+  function displayMessage(messageId, messageData, isSentByCurrentUser) {
     const messagesContainer = document.querySelector('.messages');
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
@@ -34,71 +36,198 @@ function sendMessage(messageText, isSentByCurrentUser) {
         <img src="https://via.placeholder.com/52" alt="User">
         <div class="message-content">
             <div class="message-info">
-                ${isSentByCurrentUser ? 'Você' : 'Nome do usuário'} - 00:00
+                ${messageData.user} - ${new Date(messageData.timestamp).toLocaleTimeString()}
             </div>
-            ${messageText}
+            ${messageData.text}
         </div>
     `;
     
-
     messagesContainer.appendChild(messageElement);
-
-    const newMessageRef = push(ref(database, 'messages'));
-    set(newMessageRef, {
-      text: messageText,
-      user: isSentByCurrentUser ? 'Você' : 'Nome do usuário',
-      timestamp: Date.now()
-    });
 }
-
-function displayMessage(messageId, messageData) {
-    const messageContainer = document.createElement('div');
-    const userClass = messageData.user === 'Você' ? 'sent' : 'received';
-    messageContainer.classList.add('message', userClass);
-  
-    const messageText = document.createElement('p');
-    messageText.textContent = messageData.text;
-    messageContainer.appendChild(messageText);
-  
-    const messageInfo = document.createElement('small');
-    messageInfo.textContent = `${messageData.user} (${new Date(messageData.timestamp).toLocaleTimeString()})`;
-    messageContainer.appendChild(messageInfo);
-  
-    const chatWindow = document.querySelector('.messages'); // Corrigido aqui
-    chatWindow.appendChild(messageContainer);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-}
-
-
 const sendButton = document.querySelector('.send-btn');
 const messageInput = document.querySelector('.message-input');
 
-sendButton.addEventListener('click', () => {
+sendButton.addEventListener('click', async () => {
     const messageText = messageInput.value.trim();
 
     if (messageText) {
-        sendMessage(messageText, true);
+        const userName = await getUserName();
+        const newMessageRef = push(ref(database, 'messages'));
+        set(newMessageRef, {
+            text: messageText,
+            user: userName,
+            timestamp: Date.now()
+        });
         messageInput.value = '';
     }
 });
 
-messageInput.addEventListener('keydown', (event) => {
+messageInput.addEventListener('keydown', async (event) => {
     if (event.key === 'Enter') {
         const messageText = messageInput.value.trim();
 
         if (messageText) {
-            sendMessage(messageText, true);
+            const userName = await getUserName();
+            const newMessageRef = push(ref(database, 'messages'));
+            set(newMessageRef, {
+                text: messageText,
+                user: userName,
+                timestamp: Date.now()
+            });
             messageInput.value = '';
         }
     }
 });
 
-onValue(ref(database, 'messages'), (snapshot) => {
+
+onValue(ref(database, 'messages'), async (snapshot) => {
+    const userName = await getUserName(); // Adicione essa linha
     const messages = snapshot.val();
-    const chatWindow = document.querySelector('.chat-window');
+    const chatWindow = document.querySelector('.messages');
     chatWindow.innerHTML = ''; // Limpa o conteúdo da janela do chat
   
     for (const messageId in messages) {
-      displayMessage(messageId, messages[messageId]);
+      const isSentByCurrentUser = messages[messageId].user === userName; // Adicione essa linha
+      displayMessage(messageId, messages[messageId], isSentByCurrentUser); // Modifique essa linha
     }
   });
+
+
+  async function loadMessages() {
+    const userName = await getUserName(); // Adicione essa linha
+    onValue(ref(database, 'messages'), (snapshot) => {
+        const messages = snapshot.val();
+        const chatWindow = document.querySelector('.messages');
+        chatWindow.innerHTML = ''; // Limpa o conteúdo da janela do chat
+    
+        for (const messageId in messages) {
+            const isSentByCurrentUser = messages[messageId].user === userName; // Adicione essa linha
+            displayMessage(messageId, messages[messageId], isSentByCurrentUser); // Modifique essa linha
+        }
+    });
+}
+
+
+  loadMessages();
+
+
+  async function getUserIP() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip;
+    } catch (error) {
+      console.error('Error fetching IP:', error);
+      return 'unknown';
+    }
+  }
+
+  async function getUserName() {
+    const userIP = await getUserIP();
+    const storedName = localStorage.getItem(`chatmundo-username-${userIP}`);
+    
+    if (storedName) {
+      return storedName;
+    } else {
+      const newName = prompt('Por favor, insira seu nome:');
+      const footmundoId = prompt('Por favor, insira seu ID do Footmundo:');
+      const profileImageUrl = prompt('Por favor, insira a URL da sua imagem de perfil:');
+      if (newName && footmundoId) {
+        localStorage.setItem(`chatmundo-username-${userIP}`, newName);
+        set(ref(database, `users/${userIP}`), {
+            name: newName,
+            footmundoId: footmundoId,
+            imageUrl: profileImageUrl
+        });
+        return newName;
+      } else {
+        alert('Nome e ID do Footmundo são obrigatórios.');
+        return getUserName();
+      }
+    }
+}
+  
+
+  const settingsBtn = document.querySelector('.settings-btn');
+  const modal = document.querySelector('.modal');
+  const modalContent = document.querySelector('.modal-content');
+  
+  settingsBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+  });
+  
+  modal.addEventListener('click', (event) => {
+      if (event.target !== modalContent && !modalContent.contains(event.target)) {
+          modal.classList.add('hidden');
+      }
+  });
+
+  const updateProfileImageForm = document.querySelector('#update-profile-image-form');
+  const profileImageUrlInput = document.querySelector('#profile-image-url');
+  
+
+  
+  
+
+function renderUser(user, ip) {
+    const imageUrl = user.imageUrl ? user.imageUrl : 'https://via.placeholder.com/52';
+    const listItem = document.createElement('li');
+    listItem.innerHTML = `
+        <div class="flex items-center mb-2">
+            <img src="${imageUrl}" alt="${user.name}" class="rounded-full w-12 h-12 mr-2">
+            <a href="https://www.footmundo.com/jogador/${user.footmundoId}" target="_blank" class="font-bold text-blue-500">${user.name}</a>
+        </div>
+    `;
+    listItem.id = ip;
+    userList.appendChild(listItem);
+}
+
+async function resizeImage(url, width = 52, height = 52) {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    return canvas.toDataURL();
+}
+
+updateProfileImageForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const imageUrl = profileImageUrlInput.value.trim();
+    if (imageUrl) {
+        const resizedImageUrl = await resizeImage(imageUrl);
+        const userName = await getUserName();
+        const userIP = await getUserIP();
+        set(ref(database, `users/${userIP}/imageUrl`), resizedImageUrl);
+        modal.classList.add('hidden');
+    }
+});
+
+
+function toggleModal() {
+    if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
+
+const userList = document.createElement('ul');
+const participantsSidebar = document.querySelector('.participants-sidebar');
+participantsSidebar.appendChild(userList);
+
+onValue(ref(database, 'users'), (snapshot) => {
+    const users = snapshot.val();
+    userList.innerHTML = '';
+
+    for (const userIP in users) {
+        renderUser(users[userIP], userIP);
+    }
+});

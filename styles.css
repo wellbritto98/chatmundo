@@ -113,3 +113,15 @@
 .send-btn:hover {
     background-color: #0096c7;
 }
+
+.modal {
+    z-index: 1000;
+}
+
+.modal-content {
+    max-width: 400px;
+}
+
+.hidden {
+    display: none;
+}

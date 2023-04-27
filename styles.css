@@ -13,12 +13,14 @@
 .chat-header {
     grid-area: header;
     border-bottom: 1px solid #e5e7eb;
+    background-color: #0096c7;
 }
 
 .participants-sidebar {
     grid-area: sidebar;
     border-right: 1px solid #e5e7eb;
     overflow-y: scroll;
+    background-color: #ece8e8;
 }
 
 .messages {
@@ -33,7 +35,9 @@
     display: flex;
     align-items: center;
     padding: 0.5rem;
+    background-color: #c0dbe0;
 }
+
 .input-bar input {
     flex-grow: 1;
     border: none;
@@ -45,7 +49,7 @@
 }
 
 .input-bar button {
-    background-color: transparent;
+    background-color:#11dbff;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
@@ -79,6 +83,12 @@
     color: #6b7280;
     margin-bottom: 0.25rem;
 }
+.emoji-btn{
+    margin-right: 10px;
+    width: auto;
+    height: auto;
+    font-size: 3px;
+}
 
 .sent-message {
     justify-content: flex-end;
@@ -91,9 +101,7 @@
 .send-btn {
     background-color: #00b4d8;
     border-radius: 0.25rem;
-    color: white;
     padding: 0.5rem;
-    font-size: 1.25rem;
     width: 48px;
     height: 48px;
     display: flex;

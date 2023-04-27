@@ -1,13 +1,8 @@
+// Configuração do Firebase
+
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app-check.js";
-
-// Initialize Firebase App Check
-const appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6LfBARIbAAAAALq6gDw3jxDBq1_AFxHtuYVN_8X_'),
-    isTokenAutoRefreshEnabled: true
-});
 
 const firebaseConfig = {
     apiKey: "AIzaSyCGAXDQTHMwJn1iy8uwHNL4ateDrGWcFQ8",
@@ -17,136 +12,93 @@ const firebaseConfig = {
     storageBucket: "chatmundo-bb72a.appspot.com",
     messagingSenderId: "928887513864",
     appId: "1:928887513864:web:e9cf7d0a2c0ed1cd24c2bd"
-};
+  };
+  
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Get a reference to the Realtime Database
+  // Get a reference to the Realtime Database
 const database = getDatabase(app);
-// Referências HTML
-const participantsDiv = document.getElementById('participants');
-const messagesDiv = document.getElementById('messages');
-const messageInput = document.getElementById('message-input');
-const sendBtn = document.getElementById('send-btn');
-const settingsBtn = document.getElementById('settings-btn');
-const emojiBtn = document.getElementById('emoji-btn');
 
-// Estado do usuário
-let user = {
-    id: null,
-    name: null,
-    imageUrl: null
-};
 
-// Solicitar informações do usuário
-function requestUserInfo() {
-    user.id = prompt('Digite seu ID do FootMundo:');
-    user.name = prompt('Digite seu nome:');
-    user.imageUrl = prompt('Digite o link da sua foto de perfil:');
-}
+function sendMessage(messageText, isSentByCurrentUser) {
+    const messagesContainer = document.querySelector('.messages');
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+    
+    if (isSentByCurrentUser) {
+        messageElement.classList.add('sent-message');
+    }
 
-// Adicionar participante
-function addParticipant(user) {
-    const participantDiv = document.createElement('div');
-    participantDiv.classList.add('mb-4');
-    participantDiv.innerHTML = `
-        <img src="${user.imageUrl}" alt="${user.name}" class="rounded-full w-12 h-12">
-        <a href="https://www.footmundo.com/jogador/${user.id}" class="block mt-2">${user.name}</a>
-    `;
-    participantsDiv.appendChild(participantDiv);
-}
-
-// Adicionar mensagem
-function addMessage(message) {
-    const messageDiv = document.createElement('div');
-    const isCurrentUser = message.senderId === user.id;
-
-    messageDiv.classList.add(isCurrentUser ? 'text-right' : 'text-left', 'mb-4');
-    messageDiv.innerHTML = `
-        <div class="text-xs">${isCurrentUser ? 'Você' : message.senderName} - ${message.timestamp}</div>
-        <div class="flex items-center ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}">
-            <img src="${message.senderImageUrl}" alt="${message.senderName}" class="rounded-full w-12 h-12">
-            <div class="bg-gray-200 p-2 rounded ml-4">${message.content}</div>
+    messageElement.innerHTML = `
+        <img src="https://via.placeholder.com/52" alt="User">
+        <div class="message-content">
+            <div class="message-info">
+                ${isSentByCurrentUser ? 'Você' : 'Nome do usuário'} - 00:00
+            </div>
+            ${messageText}
         </div>
     `;
-    messagesDiv.appendChild(messageDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
+    
 
-// Inicializar chat
-function initChat() {
-    requestUserInfo();
-    addParticipant(user);
+    messagesContainer.appendChild(messageElement);
 
-    // Ouvir novas mensagens
-    const messagesRef = ref(database, 'messages');
-    onValue(messagesRef, snapshot => {
-        const messages = snapshot.val();
-        messagesDiv.innerHTML = '';
-        for (const messageId in messages) {
-            const message = messages[messageId];
-            addMessage(message);
-        }
+    const newMessageRef = push(ref(database, 'messages'));
+    set(newMessageRef, {
+      text: messageText,
+      user: isSentByCurrentUser ? 'Você' : 'Nome do usuário',
+      timestamp: Date.now()
     });
 }
 
-// Enviar mensagem
-sendBtn.addEventListener('click', () => {
-    const content = messageInput.value.trim();
-    if (content) {
-        const newMessageRef = push(ref(database, 'messages'));
-        set(newMessageRef, {
-            senderId: user.id,
-            senderName: user.name,
-            senderImageUrl: user.imageUrl,
-            content: content,
-            timestamp: new Date().toLocaleTimeString()
-        });
+function displayMessage(messageId, messageData) {
+    const messageContainer = document.createElement('div');
+    const userClass = messageData.user === 'Você' ? 'sent' : 'received';
+    messageContainer.classList.add('message', userClass);
+  
+    const messageText = document.createElement('p');
+    messageText.textContent = messageData.text;
+    messageContainer.appendChild(messageText);
+  
+    const messageInfo = document.createElement('small');
+    messageInfo.textContent = `${messageData.user} (${new Date(messageData.timestamp).toLocaleTimeString()})`;
+    messageContainer.appendChild(messageInfo);
+  
+    const chatWindow = document.querySelector('.messages'); // Corrigido aqui
+    chatWindow.appendChild(messageContainer);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+
+const sendButton = document.querySelector('.send-btn');
+const messageInput = document.querySelector('.message-input');
+
+sendButton.addEventListener('click', () => {
+    const messageText = messageInput.value.trim();
+
+    if (messageText) {
+        sendMessage(messageText, true);
         messageInput.value = '';
     }
 });
 
-// Enviar mensagem ao pressionar Enter
-messageInput.addEventListener('keypress', event => {
+messageInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-        event.preventDefault();
-        sendBtn.click();
-    }
-});
+        const messageText = messageInput.value.trim();
 
-// Abrir opções de configuração
-settingsBtn.addEventListener('click', () => {
-    const newImageUrl = prompt('Digite o link da nova imagem de perfil:');
-    if (newImageUrl) {
-        user.imageUrl = newImageUrl;
-        addParticipant(user); // Atualiza a lista de participantes
-    }
-});
-
-// Inserir emojis
-emojiBtn.addEventListener('click', () => {
-    const picker = new EmojiMart.Picker({
-        onSelect: emoji => {
-            insertEmoji(emoji.native);
-            picker.destroy();
+        if (messageText) {
+            sendMessage(messageText, true);
+            messageInput.value = '';
         }
-    });
-    picker.picker.style.position = 'fixed';
-    picker.picker.style.bottom = '60px';
-    picker.picker.style.right = '20px';
-    document.body.appendChild(picker.picker);
+    }
 });
 
-// Função para inserir um emoji no input da mensagem
-function insertEmoji(emoji) {
-    const startPosition = messageInput.selectionStart;
-    const endPosition = messageInput.selectionEnd;
-    const currentValue = messageInput.value;
-    messageInput.value = currentValue.slice(0, startPosition) + emoji + currentValue.slice(endPosition);
-    messageInput.focus();
-    messageInput.selectionEnd = startPosition + emoji.length;
-}
-
-// Inicializar o aplicativo
-initChat();
+onValue(ref(database, 'messages'), (snapshot) => {
+    const messages = snapshot.val();
+    const chatWindow = document.querySelector('.chat-window');
+    chatWindow.innerHTML = ''; // Limpa o conteúdo da janela do chat
+  
+    for (const messageId in messages) {
+      displayMessage(messageId, messages[messageId]);
+    }
+  });

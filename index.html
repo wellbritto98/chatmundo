@@ -1,51 +1,45 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplicativo de chat</title>
+    <title>ChatMundo</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-
+    <link href="https://unpkg.com/emoji-mart@3.0.1/dist/emoji-mart.css" rel="stylesheet">
+</head>
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-6">
-        <div class="chat-container bg-white rounded-lg shadow-lg">
-            <!-- Cabeçalho do chat -->
-            <div class="chat-header p-3 flex items-center justify-between">
-                <div class="group-info flex items-center">
-                    <img class="group-image rounded-full w-10 h-10" src="https://via.placeholder.com/52" alt="Group">
-                    <span class="group-name ml-3 text-lg">Grupo geral Footmundo</span>
-                </div>
-                <button class="settings-btn text-gray-600">
-                    <i class="fas fa-cog"></i>
-                </button>
+    <div id="app" class="w-full h-screen flex flex-col">
+        <!-- Cabeçalho do chat -->
+        <div class="bg-blue-500 p-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img id="group-image" src="https://via.placeholder.com/32" alt="Grupo" class="rounded-full">
+                <span id="group-name" class="ml-4 text-white">Nome do grupo</span>
             </div>
-    
-            <!-- Barra lateral dos participantes -->
-            <div class="participants-sidebar">
-                <!-- Insira a lista de participantes aqui -->
-            </div>
-    
-            <!-- Área de mensagens -->
-            <div class="messages">
-                <!-- Insira as mensagens aqui -->
-            </div>
-    
-            <!-- Barra de entrada de texto e emojis -->
-            <div class="input-bar">
-                <input type="text" class="message-input" placeholder="Digite sua mensagem" />
-                <button class="emoji-btn">
-                    <i class="far fa-smile"></i>
-                </button>
-                <button class="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+            <div>
+                <button id="settings-btn" class="text-white">⚙️</button>
             </div>
         </div>
+        <!-- Corpo do chat -->
+        <div class="flex flex-grow">
+            <!-- Lista de participantes -->
+            <div id="participants" class="bg-gray-200 w-1/4 p-4">
+                <!-- Participantes serão adicionados aqui -->
+            </div>
+            <!-- Área de mensagens -->
+            <div id="messages" class="bg-white flex-grow p-4 overflow-y-auto">
+                <!-- Mensagens serão adicionadas aqui -->
+            </div>
+        </div>
+        <!-- Rodapé do chat -->
+        <div class="bg-gray-300 p-4 flex items-center">
+            <button id="emoji-btn" class="mr-4">😀</button>
+            <input id="message-input" type="text" class="flex-grow bg-white p-2 rounded" placeholder="Digite sua mensagem...">
+            <button id="send-btn" class="ml-4 bg-blue-500 text-white p-2 rounded">Enviar</button>
+        </div>
     </div>
-    
-    <script type="module" src="./chat.mjs"></script>
-
+    <script type="module" src="script.mjs"></script>
+    <script src="https://unpkg.com/emoji-mart@3.0.1/dist/emoji-mart.js"></script>
+    <script type="module" src="script.mjs"></script>
 </body>
 </html>

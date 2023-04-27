@@ -2,7 +2,10 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
-import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-auth.js";
+
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyCGAXDQTHMwJn1iy8uwHNL4ateDrGWcFQ8",
@@ -22,8 +25,7 @@ const database = getDatabase(app);
 
 
 
-
-  function displayMessage(messageId, messageData, isSentByCurrentUser) {
+function displayMessage(messageId, messageData, isSentByCurrentUser, imageUrl) {
     const messagesContainer = document.querySelector('.messages');
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
@@ -33,7 +35,7 @@ const database = getDatabase(app);
     }
 
     messageElement.innerHTML = `
-        <img src="https://via.placeholder.com/52" alt="User">
+        <img src="${imageUrl}" alt="${messageData.user}">
         <div class="message-content">
             <div class="message-info">
                 ${messageData.user} - ${new Date(messageData.timestamp).toLocaleTimeString()}
@@ -44,6 +46,10 @@ const database = getDatabase(app);
     
     messagesContainer.appendChild(messageElement);
 }
+
+
+
+
 const sendButton = document.querySelector('.send-btn');
 const messageInput = document.querySelector('.message-input');
 
@@ -53,9 +59,11 @@ sendButton.addEventListener('click', async () => {
     if (messageText) {
         const userName = await getUserName();
         const newMessageRef = push(ref(database, 'messages'));
+        const userId = await getUserIP(); // Adicione esta linha
         set(newMessageRef, {
             text: messageText,
             user: userName,
+            userId: userId, // Adicione esta linha
             timestamp: Date.now()
         });
         messageInput.value = '';
@@ -69,9 +77,11 @@ messageInput.addEventListener('keydown', async (event) => {
         if (messageText) {
             const userName = await getUserName();
             const newMessageRef = push(ref(database, 'messages'));
+            const userId = await getUserIP(); // Adicione esta linha
             set(newMessageRef, {
                 text: messageText,
                 user: userName,
+                userId: userId, // Adicione esta linha
                 timestamp: Date.now()
             });
             messageInput.value = '';
@@ -80,52 +90,55 @@ messageInput.addEventListener('keydown', async (event) => {
 });
 
 
-onValue(ref(database, 'messages'), async (snapshot) => {
-    const userName = await getUserName(); // Adicione essa linha
-    const messages = snapshot.val();
-    const chatWindow = document.querySelector('.messages');
-    chatWindow.innerHTML = ''; // Limpa o conteúdo da janela do chat
-  
-    for (const messageId in messages) {
-      const isSentByCurrentUser = messages[messageId].user === userName; // Adicione essa linha
-      displayMessage(messageId, messages[messageId], isSentByCurrentUser); // Modifique essa linha
-    }
-  });
 
 
-  async function loadMessages() {
-    const userName = await getUserName(); // Adicione essa linha
-    onValue(ref(database, 'messages'), (snapshot) => {
+
+async function loadMessages() {
+    const userName = await getUserName();
+    onValue(ref(database, 'messages'), async (snapshot) => {
         const messages = snapshot.val();
         const chatWindow = document.querySelector('.messages');
         chatWindow.innerHTML = ''; // Limpa o conteúdo da janela do chat
-    
+
         for (const messageId in messages) {
-            const isSentByCurrentUser = messages[messageId].user === userName; // Adicione essa linha
-            displayMessage(messageId, messages[messageId], isSentByCurrentUser); // Modifique essa linha
+            const isSentByCurrentUser = messages[messageId].user === userName;
+            const userSnapshot = await get(ref(database, `users/${messages[messageId].userId}`)); // Modifique esta linha
+            const user = userSnapshot.val(); // Obtenha o objeto do usuário do banco de dados
+            displayMessage(messageId, messages[messageId], isSentByCurrentUser, user.imageUrl); // Passe a URL da imagem do usuário
         }
     });
 }
+
+
+
+
 
 
   loadMessages();
 
 
   async function getUserIP() {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch (error) {
-      console.error('Error fetching IP:', error);
-      return 'unknown';
+    const auth = getAuth();
+    let user = auth.currentUser;
+  
+    if (!user) {
+      user = await signIn();
     }
+  
+    return user.uid;
   }
+  
 
   async function getUserName() {
-    const userIP = await getUserIP();
-    const storedName = localStorage.getItem(`chatmundo-username-${userIP}`);
-    
+    const auth = getAuth();
+    let user = auth.currentUser;
+  
+    if (!user) {
+      user = await signIn();
+    }
+  
+    const storedName = localStorage.getItem(`chatmundo-username-${user.uid}`);
+  
     if (storedName) {
       return storedName;
     } else {
@@ -133,11 +146,12 @@ onValue(ref(database, 'messages'), async (snapshot) => {
       const footmundoId = prompt('Por favor, insira seu ID do Footmundo:');
       const profileImageUrl = prompt('Por favor, insira a URL da sua imagem de perfil:');
       if (newName && footmundoId) {
-        localStorage.setItem(`chatmundo-username-${userIP}`, newName);
-        set(ref(database, `users/${userIP}`), {
-            name: newName,
-            footmundoId: footmundoId,
-            imageUrl: profileImageUrl
+        localStorage.setItem(`chatmundo-username-${user.uid}`, newName);
+        localStorage.setItem(`chatmundo-imageUrl-${user.uid}`, profileImageUrl); // Adicione essa linha
+        set(ref(database, `users/${user.uid}`), {
+          name: newName,
+          footmundoId: footmundoId,
+          imageUrl: profileImageUrl
         });
         return newName;
       } else {
@@ -145,7 +159,10 @@ onValue(ref(database, 'messages'), async (snapshot) => {
         return getUserName();
       }
     }
-}
+  }
+
+
+  
   
 
   const settingsBtn = document.querySelector('.settings-btn');
@@ -169,7 +186,7 @@ onValue(ref(database, 'messages'), async (snapshot) => {
   
   
 
-function renderUser(user, ip) {
+  function renderUser(user, ip) {
     const imageUrl = user.imageUrl ? user.imageUrl : 'https://via.placeholder.com/52';
     const listItem = document.createElement('li');
     listItem.innerHTML = `
@@ -200,13 +217,15 @@ updateProfileImageForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const imageUrl = profileImageUrlInput.value.trim();
     if (imageUrl) {
-        const resizedImageUrl = await resizeImage(imageUrl);
-        const userName = await getUserName();
-        const userIP = await getUserIP();
-        set(ref(database, `users/${userIP}/imageUrl`), resizedImageUrl);
-        modal.classList.add('hidden');
+      const resizedImageUrl = await resizeImage(imageUrl);
+      const userName = await getUserName();
+      const userIP = await getUserIP();
+      set(ref(database, `users/${userIP}/imageUrl`), resizedImageUrl);
+      modal.classList.add('hidden');
     }
-});
+  });
+  
+  
 
 
 function toggleModal() {
@@ -231,3 +250,15 @@ onValue(ref(database, 'users'), (snapshot) => {
         renderUser(users[userIP], userIP);
     }
 });
+
+async function signIn() {
+    const auth = getAuth();
+    try {
+      const userCredential = await signInAnonymously(auth);
+      return userCredential.user;
+    } catch (error) {
+      console.error('Error signing in:', error);
+      return null;
+    }
+  }
+  

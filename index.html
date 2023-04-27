@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicativo de chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-6">
+        <div class="chat-container bg-white rounded-lg shadow-lg">
+            <!-- Cabeçalho do chat -->
+            <div class="chat-header p-3 flex items-center justify-between">
+                <div class="group-info flex items-center">
+                    <img class="group-image rounded-full w-10 h-10" src="https://via.placeholder.com/52" alt="Group">
+                    <span class="group-name ml-3 text-lg">Grupo geral Footmundo</span>
+                </div>
+                <button class="settings-btn text-gray-600">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+    
+            <!-- Barra lateral dos participantes -->
+            <div class="participants-sidebar">
+                <!-- Insira a lista de participantes aqui -->
+            </div>
+    
+            <!-- Área de mensagens -->
+            <div class="messages">
+                <!-- Insira as mensagens aqui -->
+            </div>
+    
+            <!-- Barra de entrada de texto e emojis -->
+            <div class="input-bar">
+                <input type="text" class="message-input" placeholder="Digite sua mensagem" />
+                <button class="emoji-btn">
+                    <i class="far fa-smile"></i>
+                </button>
+                <button class="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/chat.mjs"></script>
+
+</body>
+</html>

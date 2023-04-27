@@ -1,9 +1,19 @@
 // Configuração do Firebase
+import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-app-check.js';
 
+// ... código de configuração do Firebase ...
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
 
+
+// Initialize Firebase App Check
+const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LfBARIbAAAAALq6gDw3jxDBq1_AFxHtuYVN_8X_'),
+    isTokenAutoRefreshEnabled: true
+  });
+
+  
 const firebaseConfig = {
     apiKey: "AIzaSyCGAXDQTHMwJn1iy8uwHNL4ateDrGWcFQ8",
     authDomain: "chatmundo-bb72a.firebaseapp.com",
